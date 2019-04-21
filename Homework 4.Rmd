@@ -1,0 +1,237 @@
+---
+title: "Homework 4"
+author: "Deepika Dilip"
+date: "4/19/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning=F)
+knitr::opts_chunk$set(message=F)
+```
+
+```{r packages, include=FALSE}
+library(mlbench)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(party)
+library(partykit)
+library(randomForest)
+library(ranger)
+library(gbm)
+library(plotmo)
+library(pdp)
+library(pROC)
+library(lime)
+library(lasso2)
+library(ISLR)
+```
+
+#Problem 1a: Regression Tree
+```{r}
+#Importing Data
+data(Prostate)
+prostate <- Prostate
+
+#Regression Tree : Initial (complexity parameter =0.01)
+set.seed(2) 
+tree0 <- rpart(formula = lpsa~., data = prostate)
+rpart.plot(tree0)
+
+#print(rpart.plot(tree0))
+
+#Tree Pruning
+cpTable <- printcp(tree0)
+plotcp(tree0)
+minErr <- which.min(cpTable[,4])
+
+#The complexity parameter with the minimum cross validation error is 0.045, with a size of 4.
+tree1 <- prune(tree0, cp = cpTable[minErr,1]) 
+rpart.plot(tree1)
+plotcp(tree1)
+
+#1 SE rule
+tree2 <- prune(tree0, cp= cpTable[cpTable[,4]<cpTable[minErr,4]+cpTable[minErr,5],1][1])
+
+rpart.plot(tree2)
+```
+
+The complexity parameter with the minimum cross validation error is 0.045, with a size of 4.
+
+This corresponds to the one standard error rule, which also has a size of 4.
+
+#Problem 1b: Tree Plot
+```{r, echo=FALSE}
+rpart.plot(tree2)
+
+```
+
+The predicted log PSA-antigen levels for a subject who has an lca volume greater than 2.5 is 3.8. 22% of observations were contained in this node. 
+
+
+#Problem 1c: Bagging and Variable Importance
+```{r}
+set.seed(2) 
+bagging <- randomForest(lpsa~., prostate, mtry = 8)
+```
+
+##Variable Importance
+```{r}
+varImpPlot(bagging)
+randomForest::importance(bagging)
+```
+
+
+#Problem 1d: Random Forest and Variable Importance
+```{r}
+
+set.seed(2) 
+rf <- randomForest(lpsa~., prostate, mtry = 3)
+```
+
+##Variable Importance
+```{r}
+varImpPlot(rf)
+randomForest::importance(rf)
+```
+
+
+#Problem 1e: Boosting and Variable Importance
+```{r}
+set.seed(2)
+bst <- gbm(lpsa~., prostate, distribution = "gaussian", 
+           n.trees = 5000,
+           interaction.depth = 3, 
+           shrinkage = 0.005, 
+           cv.folds = 10)
+
+nt <- gbm.perf(bst, method = "cv")
+```
+The optimal number of trees is 573.
+
+##Variable Importance
+```{r}
+summary(bst)
+```
+
+
+
+#Problem 1f: Model Selection
+##To compare models, we are going to summarize the cross-validation error.
+```{r}
+summary(bagging$mse)
+summary(rf$mse)
+summary(bst$cv.error)
+
+```
+
+-Cross Validation Error for Regression Tree is 0.6105232
+
+-Cross Validation Error for Boosting is 0.6319 
+
+-Cross Validation Error for Bagging is 0.6149 
+
+-Cross Validation Error for Random Forests is 0.6043
+
+
+Random forests is the best model, with the lowest cross validation error.
+
+
+#Problem 2a:
+```{r}
+
+
+#Creating Partition
+data(OJ)
+oj.data <-OJ
+n = 799/1070
+rowTrain <- createDataPartition(y = oj.data$Purchase, p=n, list = FALSE)
+
+training <-oj.data[rowTrain,]
+testing <-oj.data[-rowTrain,]
+
+#Fitting Classification Tree
+ctrl <- trainControl(method = "repeatedcv", summaryFunction = twoClassSummary, classProbs = TRUE)
+
+set.seed(2) 
+rpart.fit <- train(Purchase~., oj.data, subset = rowTrain, 
+                   method = "rpart", 
+                   tuneGrid = data.frame(cp = exp(seq(-6,-3, len = 20))),
+                   trControl = ctrl, 
+                   metric = "ROC") 
+
+#Tree size is 9
+
+ggplot(rpart.fit, highlight = TRUE) 
+rpart.plot(rpart.fit$finalModel)
+
+print(rpart.fit$bestTune)
+
+#The complexity parameter is 0.0054588
+
+rf.pred <- predict(rpart.fit, newdata = oj.data[-rowTrain,])
+
+#Confusion Matrix
+table(rf.pred, testing$Purchase)
+
+mean(rf.pred==testing$Purchase)
+```
+
+0.8148148 is the test classifcation rate
+ 
+#Problem 2b:
+```{r}
+set.seed(2) 
+rf.oj <- randomForest(Purchase~., oj.data[rowTrain,], mtry = 5)
+```
+
+##Variable Importance
+```{r}
+varImpPlot(rf.oj)
+randomForest::importance(rf)
+```
+
+##Test Error Rate
+```{r}
+set.seed(2)
+rfoj.pred <- predict(rf.oj, oj.data[-rowTrain,])
+
+#Confusion Matrix
+table(rfoj.pred, testing$Purchase)
+mean(rfoj.pred==testing$Purchase)
+```
+0.7888889 is the test error classifcation rate
+
+#Problem 2c:
+```{r}
+set.seed(2)
+
+gbmB.grid <- expand.grid(n.trees = c(2000,3000,4000), 
+                         interaction.depth = 1:6, 
+                         shrinkage = c(0.001,0.003,0.005), 
+                         n.minobsinnode = 1) 
+# Binomial loss function 
+bst.oj <- train(Purchase~., oj.data,
+                  subset = rowTrain, 
+                  tuneGrid = gbmB.grid, 
+                  trControl = ctrl, 
+                  method = "gbm", 
+                  distribution = "bernoulli", 
+                  metric = "ROC", verbose = FALSE)
+
+
+
+summary(bst.oj)
+
+set.seed(2)
+bstoj.pred <- predict(bst.oj, oj.data[-rowTrain,])
+table(bstoj.pred, testing$Purchase)
+mean(bstoj.pred==testing$Purchase)
+ 
+```
+ 
+0.837037 is the test error classifcation rate
+
+ 
