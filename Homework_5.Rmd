@@ -1,0 +1,121 @@
+---
+title: "Homework 5"
+author: "Deepika Dilip"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning=F)
+knitr::opts_chunk$set(message=F)
+```
+
+```{r packages, include=FALSE}
+library(mlbench)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(party)
+library(partykit)
+library(randomForest)
+library(ranger)
+library(gbm)
+library(plotmo)
+library(pdp)
+library(pROC)
+library(lime)
+library(lasso2)
+library(ISLR)
+library(mlbench)
+library(e1071)
+library(kernlab)
+```
+
+#Problem 1
+```{r}
+data(OJ)
+oj.data <- OJ
+
+n = 799/1070
+set.seed(1)
+rowTrain <- createDataPartition(y = oj.data$Purchase, p=n, list = FALSE)
+
+training <-oj.data[rowTrain,]
+testing <-oj.data[-rowTrain,]
+
+ctrl <- trainControl(method = "cv")
+
+set.seed(1) 
+svml.fit <- train(Purchase~., data = training,
+                 method = "svmLinear2", 
+                 preProcess = c("center", "scale"), 
+                 tuneGrid = data.frame(cost = exp(seq(-6,2,len=10))), 
+                 trControl = ctrl)
+
+ggplot(svml.fit, highlight = TRUE)
+
+
+#Training Error Rate
+set.seed(1)
+pred.svml.train <- predict(svml.fit, newdata = training)
+cm.linear.train <-confusionMatrix(data = pred.svml.train, reference = training$Purchase)
+train.error.linear = 1 - as.numeric(cm.linear.train$overall["Accuracy"])
+print(train.error.linear)
+
+#Test Error Rate
+set.seed(1)
+pred.svml.test <- predict(svml.fit, newdata = testing)
+cm.linear.test <-confusionMatrix(data = pred.svml.test, reference = testing$Purchase)
+test.error.linear = 1 - as.numeric(cm.linear.test$overall["Accuracy"])
+print(test.error.linear )
+```
+
+The training error rate is 16.75% and the test error rate is 17.03%.
+
+
+#Problem 2
+```{r}
+svmr.grid <- expand.grid(C = exp(seq(-7,7,len=10)), 
+                         sigma = exp(seq(-8,-1,len=5))) 
+
+set.seed(1) 
+svmr.fit <- train(Purchase~., data = training,
+                  method = "svmRadial", 
+                  preProcess = c("center", "scale"), 
+                  tuneGrid = svmr.grid, 
+                  trControl = ctrl)
+
+ggplot(svmr.fit, highlight = TRUE)
+
+
+
+#Training Error Rate
+set.seed(1)
+pred.svmr.train <- predict(svmr.fit, newdata = training)
+cm.radial.train <-confusionMatrix(data = pred.svmr.train, reference = training$Purchase)
+train.error.radial = 1 - as.numeric(cm.radial.train$overall["Accuracy"])
+print(train.error.radial)
+
+#Test Error Rate
+set.seed(1)
+pred.svmr <- predict(svmr.fit, newdata = testing)
+cm.radial.test <-confusionMatrix(data = pred.svmr, reference = testing$Purchase)
+test.error.radial = 1 - as.numeric(cm.radial.test$overall["Accuracy"])
+print(test.error.radial)
+```
+
+The training error rate is 16.25% and the test error rate is 16.67%.
+
+
+#Problem 3
+```{r}
+resamp <- resamples(list(svmr = svmr.fit, svml = svml.fit)) 
+bwplot(resamp)
+summary(resamp)
+
+```
+
+
+From the box-plots and the resampling, we can conclude that the linear kernel has a slightly higher accuracy. Therefore, we should use the linear kernel approach.
