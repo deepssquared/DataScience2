@@ -1,0 +1,148 @@
+---
+title: "Homework 2"
+author: "Deepika Dilip"
+date: "3/20/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r}
+knitr::opts_chunk$set(echo=TRUE)
+knitr::opts_chunk$set(warning=F)
+knitr::opts_chunk$set(message=F)
+```
+
+```{r}
+library(caret) # only for plot 
+library(splines) 
+library(lasso2) # only for data 
+library(mgcv) 
+library(tidyverse) 
+library(ggplot2)
+library(janitor)
+library(boot) #for CV
+```
+
+#Importing the Data
+
+```{r}
+setwd('~/Dropbox/Spring 2019/Data Science II/Homework')
+concrete <-read.csv("concrete.csv")
+concrete= janitor::clean_names(concrete)
+```
+
+#Defining the predictor and outcome matrices
+```{r}
+
+# matrix of predictors 
+x <- model.matrix(compressive_strength~.,concrete)[,-1] 
+# vector of response 
+y <- concrete$compressive_strength
+```
+
+#Part A: Plotting the Data
+```{r}
+theme1 <- trellis.par.get() 
+theme1$plot.symbol$col <- rgb(.2, .4, .2, .5) 
+theme1$plot.symbol$pch <- 16 
+theme1$plot.line$col <- rgb(.8, .1, .1, 1) 
+theme1$plot.line$lwd <- 2 
+theme1$strip.background$col <- rgb(.0, .2, .6, .2) 
+trellis.par.set(theme1) 
+featurePlot(x, y, plot = "scatter", labels = c("","Compressive Strength"), type = c("p"), layout = c(4, 2))
+```
+
+#Part B: Polynomial regression
+```{r}
+fit1 <- lm(compressive_strength~water, data = concrete) 
+fit2 <- lm(compressive_strength~poly(water,2), data = concrete) 
+fit3 <- lm(compressive_strength~poly(water,3), data = concrete) 
+fit4 <- lm(compressive_strength~poly(water,4), data = concrete) 
+
+cv.error=rep (0,5)
+for (i in 1:5){
+  glm.fit=glm(compressive_strength~poly(water,i), data=concrete) 
+  cv.error[i] = cv.glm(concrete, glm.fit)$delta[1]
+}
+print(cv.error)
+```
+
+```{r}
+anova(fit1,fit2,fit3,fit4)
+```
+
+Based on cross validation, we want the d that minimizes the cross validation error. Therefore we should use d=4.
+
+```{r}
+anova(fit1,fit2,fit3,fit4)
+```
+
+```{r}
+pred.fit1 <- predict(fit1, x = water)
+pred.fit2 <- predict(fit2, x = water)
+pred.fit3 <- predict(fit3, x = water)
+pred.fit4 <- predict(fit4, x = water)
+
+p1 <- ggplot(data=concrete) + 
+  geom_point(aes(x=water, y=compressive_strength), color="black", size=0.5) +
+  geom_line(aes(x = water, y = pred.fit1),
+            color = rgb(.3, .1, .1, 1)) +
+  geom_line(aes(x = water, y = pred.fit2),
+            color = 'blue') +
+  geom_line(aes(x = water, y = pred.fit3),
+            color = 'green') +
+  geom_line(aes(x = water, y = pred.fit4),
+            color = 'red')
+print(p1)
+```
+
+#Part C: Smoothing spline
+```{r}
+fit.ss <- smooth.spline(concrete$water, concrete$compressive_strength) 
+fit.ss$df
+
+waterlimits <- range(concrete$water) 
+water.grid <- seq(from = waterlimits[1],to = waterlimits[2])
+
+pred.ss <- predict(fit.ss, x = water.grid)
+pred.ss.df <- data.frame(pred = pred.ss$y, water = water.grid)
+
+spline_plot <- ggplot(data = concrete, aes(x = water, y = compressive_strength)) + 
+  geom_point(color = rgb(.2, .4, .2, .5)) + 
+  geom_line(aes(x = water, y = pred), data = pred.ss.df, color = rgb(.8, .1, .1, 1)) + theme_bw()
+
+print(spline_plot)
+```
+##69 degrees of freedom
+
+
+##Range of df: 2-12
+```{r}
+par(mfrow=c(3,4))
+for (i in 2:12) {
+  fit.ss1 = smooth.spline(concrete$water, concrete$compressive_strength, df = i)
+  pred.ss_df <- predict(fit.ss1, x = water.grid)
+  pred.ss_df <- data.frame(pred = pred.ss_df$y, water = water.grid)
+plot(concrete$water, concrete$compressive_strength, cex = .5, col = "grey") + title(paste("Degrees of freedom = ", round(fit.ss1$df)), outer = F) + lines(water.grid, pred.ss_df$pred, lwd = 2, col = "green")
+  }
+
+```
+
+Based on the results, it seems that df = 69 is most effective.
+
+#Part D: GAM
+```{r}
+gam.m1 <- gam(compressive_strength ~ cement + blast_furnace_slag
+              + fly_ash + water + superplasticizer + coarse_aggregate 
+              + fine_aggregate + age, data = concrete)
+gam.m2 <- gam(compressive_strength ~ cement + blast_furnace_slag
+              + fly_ash + s(water) + s(superplasticizer) + coarse_aggregate 
+              + fine_aggregate + s(age), data = concrete)
+anova(gam.m1, gam.m2, test = "F")
+
+#Plotting the Model
+par(mfrow=c(1,3)) #to partition the Plotting Window
+plot(gam.m2,se = TRUE) 
+```
+
+Based on the scatter plots from Question 1, we can assume age, water, and superplasticizer require smoothing as they are nonlinear.

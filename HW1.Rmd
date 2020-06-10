@@ -1,0 +1,156 @@
+---
+title: "Data Science II - Homework 1"
+author: "Deepika Dilip"
+date: "3/2/2019"
+
+---
+
+```{r}
+library(tidyverse)
+library(broom)
+library(glmnet)
+library(pls)
+library(caret)
+```
+
+
+#Importing the Data
+
+```{r}
+training <-read.csv("solubility_train.csv")
+testing <-read.csv("solubility_test.csv")
+y_train <-training$Solubility
+x_train <-training %>% select(FP001:SurfaceArea2) %>% data.matrix()
+x_test<-testing %>% select(FP001:SurfaceArea2) %>% data.matrix()
+y_test <-testing$Solubility
+```
+
+Here I import the data into the training and testing sets. The solubility is the designated outcome and the predictors are split into training and testing sets respectively.
+
+#Problem 1: Linear Regression
+
+```{r}
+mod2 <- lm(Solubility ~ ., data = training)
+lm_testing_results <- predict(mod2, testing)
+error <- lm_testing_results - testing$Solubility
+MSE <-mean(error^2)
+print(MSE)
+```
+
+#Problem 2: Ridge Regression
+
+##Fitting the Ridge regression using training data
+```{r}
+lambdas = exp(seq(-10, 10, length=200))
+rr_fit <- glmnet(x_train, y_train, alpha = 0, lambda = lambdas)
+summary(rr_fit)
+```
+
+##Figuring out Lambda
+```{r}
+set.seed(1)
+cv_fit <- cv.glmnet(x_train, y_train, alpha = 0, lambda = lambdas)
+plot(cv_fit)
+summary(cv_fit)
+```
+
+```{r}
+lambda_for_rr <- cv_fit$lambda.min
+print(lambda_for_rr)
+```
+
+##Running on Testing Data
+```{r}
+x_test<-testing %>% select(FP001:SurfaceArea2) %>% data.matrix()
+y_test <-testing$Solubility
+
+rr_testing_predictions <- predict(rr_fit, s = lambda_for_rr, newx = x_test)
+```
+
+##Finding the MSE
+```{r}
+error_rr <- rr_testing_predictions - y_test
+MSE_rr <-mean(error_rr^2)
+print(MSE_rr)
+```
+
+#Problem 3: Lasso model
+```{r}
+lasso_mod = glmnet(x_train, y_train, alpha = 1, lambda = lambdas)
+plot(lasso_mod)
+```
+
+##Figuring out lambda MSE
+```{r}
+set.seed(1)
+cv_fit_3 <- cv.glmnet(x_train, y_train, alpha = 1, lambda = lambdas)
+plot(cv_fit_3)
+summary(cv_fit_3)
+
+lambda_for_lasso <- cv_fit_3$lambda.min
+print(lambda_for_lasso)
+
+lasso_pred = predict(lasso_mod, s = lambda_for_lasso, newx = x_test) # Use best lambda to predict test data
+lasso_MSE = mean((lasso_pred - y_test)^2) # Calculate test MSE
+print(lasso_MSE)
+```
+
+##Finding nonzero parameters
+```{r}
+out=glmnet (x_train,y_train,alpha =1, lambda =lambdas)
+lasso_coef = predict(out, type = "coefficients", s = lambda_for_lasso)[1:228 ,]
+
+prob3_answer = lasso_coef[lasso_coef !=0]
+length(prob3_answer)
+```
+
+
+#Problem 4: PCR
+##Method 1: Caret
+```{r}
+set.seed(1)
+
+ctrl1 <-trainControl(method = "repeatedcv", number = 10, repeats = 5)
+
+pcr.fit2 <-train(x_train, y_train, 
+                 method = "pcr", 
+                 tuneLength = 228, 
+                 trControl = ctrl1,
+                 scale = TRUE)
+
+predy2.pcr3 <-predict(pcr.fit2$finalModel, newdata = x_test,ncomp = pcr.fit2$bestTune$ncomp)
+
+problem4_MSE = mean((predy2.pcr3-y_test)^2)
+
+print(problem4_MSE)
+ggplot(pcr.fit2, highlight = TRUE)+ theme_bw()
+```
+
+##Method 2: PCR Package
+```{r}
+
+pcr_fit = pcr(Solubility ~ ., data = training, scale = TRUE, validation = "CV")
+summary(pcr_fit)
+
+set.seed(1)
+
+#Finding M
+MSEP_object <- MSEP(pcr_fit)
+M = which.min(MSEP_object$val[1,1,])
+
+#Visualizing MSEs
+validationplot(pcr_fit, val.type = "MSEP")
+
+#Finding the MSE
+pcr.pred=predict (pcr_fit ,x_test, ncomp =M)
+PCR_MSE = mean((pcr.pred -y_test)^2)
+print(PCR_MSE)
+```
+#Discussion of Results
+Based on the MSE of all four models, we can rank their effectiveness as follows:
+1. Lasso
+2. Ridge Regression
+3. PCR
+4. Linear Regression
+
+We can potentially attribute this to the Lasso's method of eliminating useless predictors. 
