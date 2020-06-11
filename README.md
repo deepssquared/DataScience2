@@ -36,10 +36,10 @@ This assignment uses Weekly data set, which is part of the ISLR package. It cont
 * Produced some graphical summaries of the Weekly data.
 
 * I used the following models to analyze the performance of the Lag predictors:
- * Logistic Regression
- * LDA
- * QDA
- * KNN
+  * Logistic Regression
+  * LDA
+  * QDA
+  * KNN
  
 * Plotted the ROC curve using the predicted probability from logistic regression.
 
