@@ -3,6 +3,7 @@
 During Spring 2019, for my Master of Public Health degree, I took a class in Data Science. Below are the homework assignments I completed, along with a quick overview of the skills and techniques employed.
 
 ## [Homework 1](https://github.com/deepssquared/ds2/blob/master/HW1.Rmd)
+![hw1](https://github.com/deepssquared/ds2/blob/master/img/hw1.png)
 
 For this exercise, I predicted solubility of compounds using their chemical structures. Among the 228 predictors, 208 are binary variables that indicate the presence or absence of a particular chemical substructure, 16 are count descriptors, such as the number of bonds or the number of bromine atoms, and 4 are continuous descriptors, such as molecular weight or surface area. The response is in the column “Solubility”.
 
@@ -15,6 +16,7 @@ For this exercise, I predicted solubility of compounds using their chemical stru
 * Fit a PCR model on the training data, with M chosen by cross-validation. 
 
 ## [Homework 2](https://github.com/deepssquared/ds2/blob/master/HW2.Rmd)
+![hw1](https://github.com/deepssquared/ds2/blob/master/img/hw2.png)
 
 In this exercise, I built nonlinear models using the concrete compressive strength data set. The concrete compressive strength is a nonlinear function of age and ingredients. Ingredients include cement, blast furnace slag, ﬂy ash, water, superplasticizer, coarse aggregate, and ﬁne aggregate.
 
@@ -30,6 +32,9 @@ In this exercise, I built nonlinear models using the concrete compressive streng
 * Fit a GAM using all the predictors. 
 
 ## [Homework 3](https://github.com/deepssquared/ds2/blob/master/Homework%203.Rmd)
+![hw1](https://github.com/deepssquared/ds2/blob/master/img/hw3.png)
+![hw1](https://github.com/deepssquared/ds2/blob/master/img/hw3_2.png)
+
 
 This assignment uses Weekly data set, which is part of the ISLR package. It contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
 
@@ -46,6 +51,7 @@ This assignment uses Weekly data set, which is part of the ISLR package. It cont
 * Computed the confusion matrix and overall fraction of correct predictions.
 
 ## [Homework 4](https://github.com/deepssquared/ds2/blob/master/Homework_4.Rmd)
+![hw4](https://github.com/deepssquared/ds2/blob/master/img/hw4.png)
 
 This problem involves the Prostate data in the lasso2 package. Used set.seed() for reproducible results.
 
@@ -70,6 +76,7 @@ This problem involves the OJ data in the ISLR package. The data contains 1070 pu
 * Perform boosting on the training set and report variable importance. What is the test error rate?
 
 ## [Homework 5](https://github.com/deepssquared/ds2/blob/master/Homework_5.Rmd)
+![hw5](https://github.com/deepssquared/ds2/blob/master/img/hw5.png)
 
 This problem involves the OJ data set which is part of the ISLR package. The data con- tains 1070 purchases where the customer either purchased Citrus Hill or Minute Maid Orange Juice. A number of characteristics of the customer and product are recorded. Use set.seed() for reproducibility. Create a training set containing a random sample of 800 observations, and a test set containing the remaining observations.
 
@@ -78,6 +85,7 @@ This problem involves the OJ data set which is part of the ISLR package. The dat
 * Fit a support vector machine with a radial kernel to the training data. What are the training and test error rates?
 
 ## [Homework 6](https://github.com/deepssquared/ds2/blob/master/Homework_6.Rmd)
+![hw6](https://github.com/deepssquared/ds2/blob/master/img/hw6.png)
 
 I used hierarchical clustering on the states using the USArrests data in the ISLR package. For each of the 50 states in the United States, the data set contains the number of arrests per 100,000 residents for each of three crimes: Assault, Murder, and Rape. The data set also contains the percent of the population in each state living in urban areas, UrbanPop. 
 
