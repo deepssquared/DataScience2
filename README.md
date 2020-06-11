@@ -31,6 +31,25 @@ In this exercise, I built nonlinear models using the concrete compressive streng
 
 ## [Homework 3](https://github.com/deepssquared/ds2/blob/master/Homework%203.Rmd)
 
+This assignment uses Weekly data set, which is part of the ISLR package. It contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+
+* Produced some graphical summaries of the Weekly data.
+
+* I used the following models to analyze the performance of the Lag predictors:
+ * Logistic Regression
+ * LDA
+ * QDA
+ * KNN
+ 
+* Plotted the ROC curve using the predicted probability from logistic regression.
+
+* Computed the confusion matrix and overall fraction of correct predictions.
+
 ## [Homework 4](https://github.com/deepssquared/ds2/blob/master/Homework_4.Rmd)
 
+
 ## [Homework 5](https://github.com/deepssquared/ds2/blob/master/Homework_5.Rmd)
+
+
+## [Homework 6](https://github.com/deepssquared/ds2/blob/master/Homework_6.Rmd)
+
