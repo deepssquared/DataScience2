@@ -1,0 +1,193 @@
+---
+title: "Homework 6"
+author: Deepika Dilip
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning=F)
+knitr::opts_chunk$set(message=F)
+```
+
+```{r packages, include=FALSE}
+library(mlbench)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(party)
+library(partykit)
+library(randomForest)
+library(ranger)
+library(gbm)
+library(plotmo)
+library(pdp)
+library(pROC)
+library(lime)
+library(lasso2)
+library(ISLR)
+library(mlbench)
+library(e1071)
+library(kernlab)
+library(factoextra) 
+library(gridExtra) 
+library(corrplot) 
+library(RColorBrewer) 
+library(gplots)
+library(data.table)
+library(jpeg)
+```
+
+#Cluster analysis
+
+##Part A
+```{r}
+
+#Querying Dataset
+USA <- USArrests
+
+#USA <- scale(USA) 
+
+
+#Hierarchal Clustering
+hc.complete <- hclust(dist(USA), method = "complete")
+
+
+summary(hc.complete)
+
+
+fviz_dend(hc.complete, 
+          k = 4, 
+          cex = 0.3, 
+          palette = "jco", 
+          color_labels_by_k = TRUE, 
+          #type = c("circular"),
+          rect = TRUE, 
+          rect_fill = TRUE, 
+          rect_border = "jco", 
+          labels_track_height = 2.5)
+```
+
+##Part B
+
+```{r}
+ind4.complete <- cutree(hc.complete, 3)
+```
+
+###List of States in first cluster
+```{r}
+USA[ind4.complete == 1,] %>% print()
+```
+
+
+###List of States in second cluster
+```{r}
+USA[ind4.complete == 2,] %>% print()
+```
+
+
+###List of States in third cluster
+```{r}
+USA[ind4.complete == 3,] %>% print()
+```
+
+
+###Dendogram
+```{r}
+fviz_dend(hc.complete, 
+          k = 3, 
+          cex = 0.3, 
+          palette = "jco", 
+          color_labels_by_k = TRUE, 
+          #type = c("circular"),
+          rect = TRUE, 
+          rect_fill = TRUE, 
+          rect_border = "jco", 
+          labels_track_height = 2.5)
+```
+
+##Part C
+```{r}
+USA_scaled <- scale(USA)
+scaling <- function(x) (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
+
+hc.complete.scaled <- hclust(dist(USA_scaled), method = "complete")
+
+fviz_dend(hc.complete.scaled ) %>% plot()
+
+```
+
+
+##Part D:
+
+The goal of the algorithm behind hierarchical clustering is to minimize dissimilarlity between clusters. In this case, scaling resulted in more clusters along with additional tree height. The method we use depends on the nature of the data and the question we are trying to answer. In my opinion, I prefer the more parsimonious model (i.e. pre-scaling). In this case (in my opinion), scaling wasn’t as necessary, given that most of the variables were proportions (per 100,000) and another was a percentage. 
+
+#Problem 2: PCA
+```{r}
+img <- readJPEG('tiger.jpg')
+
+dim(img)
+
+r <- img[,,1]
+g <- img[,,2]
+b <- img[,,3]
+
+img.r.pca <- prcomp(r, center = FALSE)
+img.g.pca <- prcomp(g, center = FALSE)
+img.b.pca <- prcomp(b, center = FALSE)
+
+rgb.pca <- list(img.r.pca, img.g.pca, img.b.pca)
+
+# Approximate X with XV_kV_k^T
+compress <- function(pr, k)
+{
+  compressed.img <- pr$x[,1:k] %*% t(pr$rotation[,1:k])
+  compressed.img
+}
+
+# Using first 20 PCs
+pca20 <- sapply(rgb.pca, compress, k = 20, simplify = "array")
+
+writeJPEG(pca20, "tiger20.jpeg")
+
+
+# 50 PCS
+pca50 <- sapply(rgb.pca, compress, k = 50, simplify = "array")
+
+writeJPEG(pca50, "tiger50.jpeg")
+
+
+
+# 100 PCS
+pca100 <- sapply(rgb.pca, compress, k = 100, simplify = "array")
+
+writeJPEG(pca100, "tiger100.jpeg")
+
+
+#200 PCS
+
+pca200 <- sapply(rgb.pca, compress, k = 200, simplify = "array")
+
+writeJPEG(pca200, "tiger200.jpeg")
+```
+
+
+![PCA20](tiger20.jpeg)
+
+
+![PCA50](tiger50.jpeg)
+
+
+
+![PCA100](tiger100.jpeg)
+
+
+
+![PCA200](tiger200.jpeg)
+
+
+###Interpretation:
+
+As the number of principal components increases, so does the clarity of the image. However (in my artistic opinion), the clarity of the image did increase dramatically from 20 to 50 principal components and from 50 to 100 principal components but not so much from 100 to 200 principal components. We need to consider this in real-life applications, especially when figuring out the cut-off for facial recognition software, which has social ramifications.
