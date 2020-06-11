@@ -3,7 +3,7 @@
 During Spring 2019, for my Master of Public Health degree, I took a class in Data Science. Below are the homework assignments I completed, along with a quick overview of the skills and techniques employed.
 
 ## [Homework 1](https://github.com/deepssquared/ds2/blob/master/HW1.Rmd)
-![hw1](https://github.com/deepssquared/ds2/blob/master/img/hw1.png =100x20)
+![hw1](https://github.com/deepssquared/ds2/blob/master/img/hw1.png | width=100)
 
 For this exercise, I predicted solubility of compounds using their chemical structures. Among the 228 predictors, 208 are binary variables that indicate the presence or absence of a particular chemical substructure, 16 are count descriptors, such as the number of bonds or the number of bromine atoms, and 4 are continuous descriptors, such as molecular weight or surface area. The response is in the column “Solubility”.
 
